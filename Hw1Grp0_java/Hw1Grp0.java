@@ -57,7 +57,6 @@ public class Hw1Grp0 {
 			Put put = new Put(key.getBytes());
 			put.add("res".getBytes(), columnName.getBytes(), cols[resColumn.get(i)].getBytes());
 			table.put(put);
-			System.out.format("# put table=%s, key=%s, res:%s, %s\n", "Result", key, columnName, cols[resColumn.get(i)]);
 		}
 	}
 	
@@ -101,13 +100,10 @@ public class Hw1Grp0 {
 		htd.addFamily(cf);
 
 		if (hAdmin.tableExists(tableName)) {
-			System.out.println("Table already exists. Deleting...");
 			hAdmin.disableTable(tableName);
 			hAdmin.deleteTable(tableName);
 		}
 		hAdmin.createTable(htd);
-		System.out.println("Table " + tableName + " created successfully.");
-		hAdmin.close();
 		@SuppressWarnings("deprecation")
 		HTable table = new HTable(configuration, tableName);
 		
@@ -144,8 +140,6 @@ public class Hw1Grp0 {
 				int index = 0;
 				while (it.hasNext()) {
 					String curLineR = it.next();
-					System.out.format("\n# LineR: %s\n", curLineR);
-					System.out.format("# LineS: %s\n", lineS);
 					writeToTable(table, joinKeyS, "R", index, resColumnR, curLineR);
 					writeToTable(table, joinKeyS, "S", index, resColumnS, lineS);
 					++index;
@@ -157,6 +151,7 @@ public class Hw1Grp0 {
 		inR.close();
 		inS.close();
 		table.close();
+		hAdmin.close();
 	}
 	
 	/**
@@ -204,17 +199,18 @@ public class Hw1Grp0 {
 		int joinColumnS = 0;
 		if (joins.length == 2) {
 			if (joins[0].startsWith("R") && joins[1].startsWith("S")) {
-				joinColumnR = Integer.parseInt(joins[0].replace("R", ""));
-				joinColumnS = Integer.parseInt(joins[1].replace("S", ""));
+				joinColumnR = Integer.parseInt(joins[0].replaceAll("[^0-9]", ""));
+				joinColumnS = Integer.parseInt(joins[1].replaceAll("[^0-9]", ""));
 			} else {
-				joinColumnR = Integer.parseInt(joins[1].replace("R", ""));
-				joinColumnS = Integer.parseInt(joins[0].replace("S", ""));
+				joinColumnR = Integer.parseInt(joins[1].replaceAll("[^0-9]", ""));
+				joinColumnS = Integer.parseInt(joins[0].replaceAll("[^0-9]", ""));
 			}
 		}
 
 		/**
 		 * Get res columns
-		 * support res non-ordered input: S1,R1,S2 or R2,S3,R4 or S1,R2,R5,S3 etc.
+		 * supported non-ordered input: S1,R1,S2 or R2,S3,R4 or S1,R2,R5,S3 etc.
+		 * considered blank space existence
 		 */
 		String[] res = args[3].replace("res:", "").split(",");
 		ArrayList<Integer> resColumnR = new ArrayList<>();
@@ -229,7 +225,7 @@ public class Hw1Grp0 {
 		}
 		
 		/**
-		 * Excute
+		 * Execute
 		 */
 		Hw1Grp0 work = new Hw1Grp0();
 		work.hashJoin(fileR, fileS, joinColumnR, joinColumnS, resColumnR, resColumnS);
